@@ -219,6 +219,36 @@ def main():
             plot_curves(y, s, "B3_rotate", split_name, out_dir)
 
     # -------------------
+    # MHD (our algorithm)
+    # -------------------
+    from src.models.marge_hybrid import MHDHybrid
+
+    # we need embedding scores g_phi on all splits from the *best* KG model (RotatE performed best on cold)
+    def embed_scores(model, df, drug2id, device):
+        from src.models.kg_embeddings import predict_embedding_model
+        return predict_embedding_model(model, df, drug2id, device)
+
+    # choose backbone: rt from the B3 RotatE block above (already trained)
+    if 'rt' in locals():
+        g_tr = embed_scores(rt, tr, drug2id, device)
+        g_va = embed_scores(rt, va, drug2id, device)
+        g_te = embed_scores(rt, te, drug2id, device)
+    else:
+        # fallback to DistMult if RotatE not enabled
+        g_tr = embed_scores(dm, tr, drug2id, device)
+        g_va = embed_scores(dm, va, drug2id, device)
+        g_te = embed_scores(dm, te, drug2id, device)
+
+    mhd = MHDHybrid().fit(G, tr, va, X_tr, X_va, g_tr, g_va)
+    for split_name, df, psi, g in [("val", va, X_va, g_va), ("test", te, X_te, g_te)]:
+        s = mhd.predict_proba_pairs(df, psi, g)
+        met = compute_all(df["label"].values, s)
+        met["model"] = "MHD_hybrid"
+        met["split"] = split_name
+        rows.append(met)
+        plot_curves(df["label"].values, s, "MHD_hybrid", split_name, out_dir)
+
+    # -------------------
     # Save results
     # -------------------
     df_out = pd.DataFrame(rows)
