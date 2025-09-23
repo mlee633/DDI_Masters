@@ -1,0 +1,32 @@
+data:
+  data_dir: ${DATA_DIR:/Users/ilee00/Desktop/Master.v2/Dataset}
+  chch_file: ChCh-Miner_durgbank-chem-chem.tsv
+  decagon_file: ChChSe-Decagon_polypharmacy.csv
+  ddinter_shards_glob: ddinter_downloads_code_*.csv
+  sep_chch: "\t"
+
+experiment:
+  seed: 42
+  test_size: 0.2
+  val_size: 0.1
+  split_type: warm  # [warm|cold_drug]
+  n_neg_per_pos: 1
+
+# models:
+#   use_ppmi: true
+#   use_rule: true
+#   use_logreg: true
+#   use_xgboost: true
+#   use_distmult: true
+#   use_rotate: true
+
+models:
+  use_logreg: false
+  use_xgboost: false
+  use_ppmi: false
+  use_rule: false
+  use_distmult: true
+  use_rotate: true
+
+output:
+  dir: outputs
