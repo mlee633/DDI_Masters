@@ -19,8 +19,8 @@ def compute_all(y_true, y_score, ks=(10,20,50)):
     out["AUPRC"] = average_precision_score(y_true, y_score)
     out["Brier"] = brier_score_loss(y_true, y_score)
     out["ECE@10"] = ece_score(y_score, y_true, n_bins=10)
+
     # Precision@K
-    import numpy as np
     order = np.argsort(-y_score)
     y_sorted = np.array(y_true)[order]
     for k in ks:

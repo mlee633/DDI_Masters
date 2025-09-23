@@ -95,12 +95,12 @@ def main():
     neg_all = negative_sampling(pos_all, ratio=cfg["experiment"]["n_neg_per_pos"], seed=cfg["experiment"]["seed"])
     all_pairs = pd.concat([pos_all.assign(label=1), neg_all], ignore_index=True)
 
-    # --- DEBUG: subsample for stability test ---
-    sample_size = 50000   # try 50k pairs
-    if len(all_pairs) > sample_size:
-        all_pairs = all_pairs.sample(n=sample_size, random_state=cfg["experiment"]["seed"])
-        print(f"⚠️ Subsampled dataset to {len(all_pairs)} pairs for testing")
-    # --- DEBUG: subsample for stability test ---
+    # # --- DEBUG: subsample for stability test ---
+    # sample_size = 50000   # try 50k pairs
+    # if len(all_pairs) > sample_size:
+    #     all_pairs = all_pairs.sample(n=sample_size, random_state=cfg["experiment"]["seed"])
+    #     print(f"⚠️ Subsampled dataset to {len(all_pairs)} pairs for testing")
+    # # --- DEBUG: subsample for stability test ---
 
     # Splits
     if cfg["experiment"]["split_type"] == "warm":

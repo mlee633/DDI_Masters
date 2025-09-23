@@ -104,7 +104,8 @@ def train_embedding_model(
                 all_preds.extend(preds)
                 all_labels.extend(y.numpy())
 
-        val_metrics = compute_all(all_labels, all_preds)
+        # val_metrics = compute_all(all_labels, all_preds)
+        val_metrics = compute_all(np.array(all_labels), np.array(all_preds))
         val_auprc = val_metrics["AUPRC"]
 
         # epoch summary
