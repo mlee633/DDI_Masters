@@ -143,3 +143,15 @@ def predict_embedding_model(model, df, drug2id, device="cpu", batch_size=512):
             pred = model(u, v).cpu().numpy()
             preds.extend(pred)
     return np.array(preds)
+
+def get_entity_embeddings(model):
+    # DistMult: single table; RotatE: concat real|imag
+    if hasattr(model, "emb"):  # DistMult
+        W = model.emb.weight.detach().cpu().numpy()
+        return W
+    elif hasattr(model, "emb_re") and hasattr(model, "emb_im"):
+        Wre = model.emb_re.weight.detach().cpu().numpy()
+        Wim = model.emb_im.weight.detach().cpu().numpy()
+        return np.concatenate([Wre, Wim], axis=1)
+    else:
+        raise ValueError("Unknown embedding model")
