@@ -101,3 +101,9 @@ models:
   use_rule: false
   use_distmult: false
   use_rotate: true
+
+#MHD V2:
+python run_benchmark.py
+
+#MHD V3:
+python -m src.train_mhd_v3 --config src/config/exp_mhd_v3.yaml
