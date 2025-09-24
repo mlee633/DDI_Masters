@@ -1,9 +1,11 @@
+# data_dir: ${DATA_DIR:/Users/ilee00/Desktop/Master.v2/Dataset}
 data:
-  # data_dir: ${DATA_DIR:/Users/ilee00/Desktop/Master.v2/Dataset}
-  data_dir: ${DATA_DIR:C:\Users\minwo\Desktop\Dataset}
+  data_dir: ${DATA_DIR:/home/isaac/Desktop/Dataset}
   chch_file: ChCh-Miner_durgbank-chem-chem.tsv
   decagon_file: ChChSe-Decagon_polypharmacy.csv
   ddinter_shards_glob: ddinter_downloads_code_*.csv
+  # drug_cyp_file: drug_cyp.tsv
+  drug_cyp_file: src/dataset/drug_cyp.tsv
   sep_chch: "\t"
 
 experiment:
@@ -14,11 +16,11 @@ experiment:
   n_neg_per_pos: 1
 
 models:
-  use_ppmi: true
-  use_rule: true
-  use_logreg: true
-  use_xgboost: true
-  use_distmult: true
+  use_ppmi: false
+  use_rule: false
+  use_logreg: false
+  use_xgboost: false
+  use_distmult: false
   use_rotate: true
 
 output:

@@ -21,7 +21,7 @@ from src.models.kg_embeddings import (
 )
 
 # Priors + MHD v2
-from src.features.priors import load_atc_map, atc_features, load_cyp_table, cyp_features
+from src.features.priors import load_atc_map, atc_pair_features, load_cyp_table, cyp_pair_features
 from src.models.mhd_v2 import MHDv2
 
 import numpy as np
@@ -163,7 +163,8 @@ def main():
     # -------------------
     drug_list = pd.unique(pd.concat([all_pairs["drug_u"], all_pairs["drug_v"]])).tolist()
     drug2id = {d: i for i, d in enumerate(drug_list)}
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cpu"
 
     if cfg["models"].get("use_distmult", False):
         print("Training DistMult...")
@@ -181,15 +182,26 @@ def main():
         rt, y_val, s_val = train_embedding_model(rt, tr, va, drug2id, device=device, max_epochs=50, patience=10)
         y_te = te["label"].values
         s_te = predict_embedding_model(rt, te, drug2id, device=device)
-        for split, y, s in [("val", y_val, s_val), ("test", y_te, s_te)]:
-            met = compute_all(y, s); met["model"] = "B3_rotate"; met["split"] = split
-            rows.append(met); plot_curves(y, s, "B3_rotate", split, out_dir)
+        for split_name, y, s in [("val", y_val, s_val), ("test", y_te, s_te)]:
+            met = compute_all(y, s)
+            met["model"] = "B3_rotate"
+            met["split"] = split_name
+            rows.append(met)
+            plot_curves(y, s, "B3_rotate", split_name, out_dir)
+
+        # --- Save RotatE model and drug2id mapping ---
+        import torch, json
+        torch.save(rt.state_dict(), out_dir / "rotate_model.pt")
+        with open(out_dir / "drug2id.json", "w") as f:
+            json.dump(drug2id, f)
+        print("Saved RotatE model ->", out_dir / "rotate_model.pt")
+        print("Saved drug2id mapping ->", out_dir / "drug2id.json")
 
     # -------------------
     # MHD v2
     # -------------------
     atc_map = load_atc_map(data_dir)
-    cyp_df  = load_cyp_table(data_dir)
+    cyp_df = load_cyp_table(data_dir / cfg["data"]["drug_cyp_file"])
     E_rot = get_entity_embeddings(rt) if "rt" in locals() else None
     E_dm  = get_entity_embeddings(dm) if "dm" in locals() else None
 
@@ -212,8 +224,8 @@ def main():
     def ppmi_vec(df): return ppmi.predict_proba(df[["drug_u","drug_v"]])
 
     def prior_block(df):
-        atc = np.array([atc_features(u,v, atc_map) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
-        cyp = np.array([cyp_features(u,v, cyp_df) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
+        atc = np.array([atc_pair_features(u,v, atc_map) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
+        cyp = np.array([cyp_pair_features(u,v, cyp_df) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
         return atc, cyp
 
     def emb_block(df, mhd2):
@@ -229,8 +241,31 @@ def main():
                     X_tr.values, ppmi_vec(tr).reshape(-1,1), rule_vec(tr).reshape(-1,1),
                     atc_tr, cyp_tr, emb_block(tr, mhd2)]
     val_blocks = [g_rot_va.reshape(-1,1), g_dm_va.reshape(-1,1),
-                  X_va.values, ppmi_vec(va).reshape(-1,1), rule_vec(va).reshape(-1,1),
-                  atc_va, cyp_va, emb_block(va, mhd2)]
+                X_va.values, ppmi_vec(va).reshape(-1,1), rule_vec(va).reshape(-1,1),
+                atc_va, cyp_va, emb_block(va, mhd2)]
+
+    # ---- Debug: check feature dimensions ----
+    print("RotatE score:", g_rot_tr.reshape(-1,1).shape[1])
+    print("DistMult score:", g_dm_tr.reshape(-1,1).shape[1])
+    print("Structural features:", X_tr.values.shape[1])
+    print("PPMI:", ppmi_vec(tr).reshape(-1,1).shape[1])
+    print("Rule:", rule_vec(tr).reshape(-1,1).shape[1])
+    print("ATC:", atc_tr.shape[1])
+    print("CYP:", cyp_tr.shape[1])
+    print("Embedding interactions:", emb_block(tr, mhd2).shape[1])
+
+    dims = sum([
+        g_rot_tr.reshape(-1,1).shape[1],
+        g_dm_tr.reshape(-1,1).shape[1],
+        X_tr.values.shape[1],
+        ppmi_vec(tr).reshape(-1,1).shape[1],
+        rule_vec(tr).reshape(-1,1).shape[1],
+        atc_tr.shape[1],
+        cyp_tr.shape[1],
+        emb_block(tr, mhd2).shape[1],
+    ])
+    print("Total feature vector dimension =", dims)
+    # -----------------------------------------
 
     mhd2.fit(train_blocks, val_blocks, tr["label"].values, va["label"].values)
 
