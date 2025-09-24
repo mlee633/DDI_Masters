@@ -102,8 +102,16 @@ models:
   use_distmult: false
   use_rotate: true
 
+# Made Algorithms MHD:
+
 #MHD V2:
 python run_benchmark.py
 
 #MHD V3:
 python -m src.train_mhd_v3 --config src/config/exp_mhd_v3.yaml
+
+#MHD V4:
+python -m src.train_mhd_v4 --config src/config/exp_mhd_v4.yaml
+
+# Comparison Table:
+python -m src.scripts.run_ablation_mhd_v4 --config src/config/exp_mhd_v4.yaml

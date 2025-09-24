@@ -111,10 +111,9 @@ def main():
     model, (y_va, s_va), (y_te, s_te) = train_mhd_v3(
         model, tr, va, te, drug2id, F_tr, F_va, F_te,
         lr=mcfg["lr"], weight_decay=1e-5, max_epochs=mcfg["epochs"], patience=10,
-        tau=mcfg["contrastive_tau"], lambda_sup=mcfg["lambda_sup"], lambda_cf=mcfg["lambda_cf"],
+        lambda_sup=mcfg["lambda_sup"], lambda_cf=mcfg["lambda_cf"],
         device=device
     )
-
     rows = []
     for split, y, s in [("val", y_va, s_va), ("test", y_te, s_te)]:
         met = compute_all(y, s); met["model"]="MHD_v3"; met["split"]=split

@@ -7,7 +7,9 @@ experiment:
   n_neg_per_pos: 1
 
 data:
-  data_dir: ${DATA_DIR:/home/isaac/Desktop/Dataset}    
+  # data_dir: ${DATA_DIR:/home/isaac/Desktop/Dataset}               # Uni
+  # data_dir: ${DATA_DIR:/Users/ilee00/Desktop/Master.v2/Dataset}   # Mac
+  data_dir : ${C:\Users\minwo\Desktop\Dataset}                      # Home
   chch_file: ChCh-Miner_durgbank-chem-chem.tsv
   sep_chch: "\t"
   ddinter_shards_glob: ddinter_downloads_code_*.csv

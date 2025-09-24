@@ -1,7 +1,6 @@
 {
   "config": {
     "experiment": {
-      "name": "mhd_v3",
       "seed": 42,
       "split_type": "cold_drug",
       "test_size": 0.2,
@@ -9,29 +8,32 @@
       "n_neg_per_pos": 1
     },
     "data": {
-      "data_dir": "/home/isaac/Desktop/Dataset",
+      "data_dir": "\\Users\\minwo\\Desktop\\Dataset",
       "chch_file": "ChCh-Miner_durgbank-chem-chem.tsv",
-      "sep_chch": "\t",
       "ddinter_shards_glob": "ddinter_downloads_code_*.csv",
       "decagon_file": "ChChSe-Decagon_polypharmacy.csv",
-      "drug_cyp_file": "src/dataset/drug_cyp.tsv"
+      "drug_cyp_file": "src/dataset/drug_cyp.tsv",
+      "sep_chch": "\t"
     },
     "output": {
       "dir": "outputs"
     },
     "models": {
-      "mhd_v3": {
-        "use": true,
-        "emb_dim": 128,
-        "contrastive_tau": 0.2,
+      "mhd_v4": {
+        "emb_dim": 256,
+        "attn_dim": 128,
         "focal_gamma": 2.0,
+        "prior_dropout": 0.1,
+        "lr": 0.0005,
+        "epochs": 60,
+        "patience": 12,
         "lambda_sup": 1.0,
-        "lambda_cf": 0.2,
-        "lr": 0.001,
-        "epochs": 50,
-        "temp_scale": true,
-        "prior_init_from_counts": true
+        "lambda_cf": 1.0
       }
+    },
+    "pretrained": {
+      "rotate_ckpt": "outputs/cold_KG_latest/rotate_model.pt",
+      "rotate_map": "outputs/cold_KG_latest/drug2id.json"
     }
   },
   "prior_meta": {
