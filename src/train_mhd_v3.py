@@ -94,8 +94,8 @@ def main():
     mcfg = cfg["models"]["mhd_v3"]
     model = MHDV3(n_drugs=len(drugs), emb_dim=mcfg["emb_dim"], prior_dim=prior_dim, gamma=mcfg["focal_gamma"])
 
-    rotate_ckpt = "outputs/cold_KG_latest/rotate_model.pt"  # adjust to your file
-    rotate_map  = "outputs/cold_KG_latest/drug2id.json"
+    rotate_ckpt = "outputs/cold_B0_MHDv2_Final/rotate_model.pt"  # adjust to your file
+    rotate_map  = "outputs/cold_B0_MHDv2_Final/drug2id.json"
 
     # Load RotatE matrix + mapping
     E_rot, rot_d2i = load_rotate_embeddings(rotate_ckpt, rotate_map)
