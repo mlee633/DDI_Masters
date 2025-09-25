@@ -32,7 +32,7 @@ def main():
 
     # Sort models in order B0–B3
     order = ["B0_ppmi", "B1_rule_presence", "B2_logreg", "B2_xgboost",
-            "B3_distmult", "B3_rotate", "MHD_v2"]
+            "B3_distmult", "B3_rotate", "MHD_v2", "MHD_v3", "MHD_v4"]
     pivot = pivot.reindex(order, level=0)
 
     # Save outputs
