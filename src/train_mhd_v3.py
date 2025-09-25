@@ -1,3 +1,6 @@
+# This script trains the MHD_v3 model for DDI prediction using drug embeddings
+# initialized from a pre-trained RotatE model. It incorporates drug pair priors
+
 import argparse, datetime
 from pathlib import Path
 import numpy as np

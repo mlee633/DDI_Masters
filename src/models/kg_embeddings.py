@@ -55,17 +55,9 @@ class RotatEModel(nn.Module):
     def forward(self, u, v):
         return torch.sigmoid(self.score(u, v))
 
-def train_embedding_model(
-    model,
-    train_df,
-    val_df,
-    drug2id,
-    device="cpu",
-    lr=1e-3,
-    batch_size=512,
-    max_epochs=100,
-    patience=10,
-):
+def train_embedding_model(model, train_df, val_df, drug2id, device="cpu",
+                          lr=1e-3, batch_size=512, max_epochs=50, patience=10,
+                          log_writer=None, log_file=None):
     train_ds = PairDataset(train_df, drug2id)
     val_ds = PairDataset(val_df, drug2id)
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
@@ -84,7 +76,7 @@ def train_embedding_model(
         model.train()
         total_loss = 0.0
 
-        # plain batch loop (no tqdm)
+        # training loop
         for u, v, y in train_loader:
             u, v, y = u.to(device), v.to(device), y.to(device)
             pred = model(u, v)
@@ -104,14 +96,20 @@ def train_embedding_model(
                 all_preds.extend(preds)
                 all_labels.extend(y.numpy())
 
-        # val_metrics = compute_all(all_labels, all_preds)
         val_metrics = compute_all(np.array(all_labels), np.array(all_preds))
         val_auprc = val_metrics["AUPRC"]
+        val_auroc = val_metrics["AUROC"]
 
         # epoch summary
         print(f"Epoch {epoch+1}/{max_epochs} "
-            f"loss={total_loss/len(train_loader):.4f} "
-            f"val_AUPRC={val_auprc:.4f}")
+              f"loss={total_loss/len(train_loader):.4f} "
+              f"val_AUPRC={val_auprc:.4f} val_AUROC={val_auroc:.4f}")
+
+        # logging
+        if log_writer:
+            log_writer.writerow([epoch+1, total_loss/len(train_loader), val_auprc, val_auroc])
+            if log_file:
+                log_file.flush()
 
         # early stopping
         if val_auprc > best_val:

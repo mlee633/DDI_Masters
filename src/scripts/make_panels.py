@@ -1,3 +1,6 @@
+# This script generates precision-recall panels for selected models from the latest training runs.
+# It looks for the most recent metrics_summary.csv files in the outputs directory,
+
 import re
 from pathlib import Path
 import matplotlib.pyplot as plt

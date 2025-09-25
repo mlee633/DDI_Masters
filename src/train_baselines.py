@@ -1,8 +1,13 @@
-import os, json
+#This script trains and evaluates various baseline models for DDI prediction,
+# including rule-based, PPMI, classical ML, knowledge graph embeddings (DistMult,
+# RotatE), and MHD v2 with priors. It saves evaluation metrics and plots ROC/PR curves.
+
+import os, json, csv
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
+import argparse
 
 from src.utils.io import load_config, ensure_dir, save_json, set_seed
 from src.data.ingest import load_chch, load_ddinter, load_decagon, merge_sources
@@ -26,7 +31,6 @@ from src.models.mhd_v2 import MHDv2
 
 import numpy as np
 import torch
-
 
 def plot_curves(y_true, y_score, model_name, split, out_dir):
     fpr, tpr, _ = roc_curve(y_true, y_score)
@@ -53,9 +57,19 @@ def plot_curves(y_true, y_score, model_name, split, out_dir):
     plt.savefig(out_dir / f"fig_pr_{model_name}_{split}.png", dpi=300)
     plt.close()
 
+def init_logger(out_dir, name):
+    import csv
+    log_file = open(out_dir / f"{name}_log.csv", "w", newline="")
+    writer = csv.writer(log_file)
+    writer.writerow(["epoch", "loss", "val_AUPRC", "val_AUROC"])
+    return log_file, writer
 
 def main():
-    cfg = load_config()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True)
+    args = parser.parse_args()
+    cfg = load_config(args.config)
+    print("Loaded config:", cfg)
     set_seed(cfg["experiment"]["seed"])
     data_dir = Path(cfg["data"]["data_dir"])
 
@@ -169,7 +183,13 @@ def main():
     if cfg["models"].get("use_distmult", False):
         print("Training DistMult...")
         dm = DistMultModel(len(drug2id), emb_dim=128)
-        dm, y_val, s_val = train_embedding_model(dm, tr, va, drug2id, device=device, max_epochs=50, patience=10)
+        f_log, writer = init_logger(out_dir, "B3_distmult")
+        dm, y_val, s_val = train_embedding_model(
+            dm, tr, va, drug2id, device=device, max_epochs=50, patience=10,
+            log_writer=writer, log_file=f_log
+        )
+        f_log.close()
+
         y_te = te["label"].values
         s_te = predict_embedding_model(dm, te, drug2id, device=device)
         for split, y, s in [("val", y_val, s_val), ("test", y_te, s_te)]:
@@ -179,7 +199,12 @@ def main():
     if cfg["models"].get("use_rotate", False):
         print("Training RotatE...")
         rt = RotatEModel(len(drug2id), emb_dim=128)
-        rt, y_val, s_val = train_embedding_model(rt, tr, va, drug2id, device=device, max_epochs=50, patience=10)
+        f_log, writer = init_logger(out_dir, "B3_rotate")
+        rt, y_val, s_val = train_embedding_model(
+            rt, tr, va, drug2id, device=device, max_epochs=50, patience=10,
+            log_writer=writer, log_file=f_log
+        )
+        f_log.close()
         y_te = te["label"].values
         s_te = predict_embedding_model(rt, te, drug2id, device=device)
         for split_name, y, s in [("val", y_val, s_val), ("test", y_te, s_te)]:
@@ -201,7 +226,8 @@ def main():
     # MHD v2
     # -------------------
     atc_map = load_atc_map(data_dir)
-    cyp_df = load_cyp_table(data_dir / cfg["data"]["drug_cyp_file"])
+
+    cyp_df = load_cyp_table(cfg["data"]["drug_cyp_file"])
     E_rot = get_entity_embeddings(rt) if "rt" in locals() else None
     E_dm  = get_entity_embeddings(dm) if "dm" in locals() else None
 
@@ -224,8 +250,29 @@ def main():
     def ppmi_vec(df): return ppmi.predict_proba(df[["drug_u","drug_v"]])
 
     def prior_block(df):
-        atc = np.array([atc_pair_features(u,v, atc_map) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
-        cyp = np.array([cyp_pair_features(u,v, cyp_df) for u,v in zip(df["drug_u"], df["drug_v"])], dtype=float)
+        atc = np.array([atc_pair_features(u, v, atc_map) 
+                        for u, v in zip(df["drug_u"], df["drug_v"])], dtype=float)
+
+        cyp_feats = [cyp_pair_features(u, v, cyp_df) 
+                    for u, v in zip(df["drug_u"], df["drug_v"])]
+
+        # Convert to fixed-width numpy array
+        max_len = max((len(f) for f in cyp_feats), default=0)
+        if max_len == 0:
+            cyp = np.zeros((len(cyp_feats), 0), dtype=float)
+        else:
+            cyp = np.zeros((len(cyp_feats), max_len), dtype=float)
+            for i, f in enumerate(cyp_feats):
+                if len(f) > 0:
+                    cyp[i, :len(f)] = f
+
+        # --- Debug info ---
+        nonzero_rows = np.sum(np.any(cyp > 0, axis=1))
+        total_rows = len(cyp)
+        print(f"CYP features: dim={cyp.shape[1]}, "
+            f"nonzero pairs={nonzero_rows}/{total_rows} "
+            f"({100*nonzero_rows/total_rows:.2f}%)")
+
         return atc, cyp
 
     def emb_block(df, mhd2):

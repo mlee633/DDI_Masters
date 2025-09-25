@@ -1,3 +1,6 @@
+# This script runs multiple training sessions with different random seeds,
+# collects their evaluation metrics, and aggregates the results into a summary CSV.
+
 import subprocess, sys, shutil
 from pathlib import Path
 import pandas as pd

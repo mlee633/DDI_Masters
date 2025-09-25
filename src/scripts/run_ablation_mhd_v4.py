@@ -1,3 +1,7 @@
+#This script runs ablation studies for the MHD_v4 model on DDI prediction.
+# It trains variants of the model with/without priors and with frozen embeddings,
+# and saves the evaluation results for comparison. 
+
 import argparse, datetime, json
 from pathlib import Path
 import pandas as pd

@@ -1,3 +1,6 @@
+#this script aggregates evaluation metrics from multiple training runs
+# It scans the outputs/ directory for metrics_summary.csv files,
+
 import pandas as pd
 from pathlib import Path
 

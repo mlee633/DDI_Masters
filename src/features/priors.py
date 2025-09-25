@@ -160,22 +160,33 @@ def cyp_pair_features(u, v, cyp_df):
         - inh_inh
         - inh_sub (either direction)
         - ind_sub (either direction)
-    Returns a flat list concatenating all enzymes in sorted order.
+    Always returns a fixed-length feature vector.
     """
-    if cyp_df is None: return []
-    u, v = str(u), str(v)
-    if u not in cyp_df.index or v not in cyp_df.index: return []
+    if cyp_df is None:
+        return []
+
     enzymes = sorted({c[:-4] for c in cyp_df.columns if c.endswith(("_sub","_inh","_ind"))})
+    if not enzymes:
+        enzymes = sorted({c[:-4] for c in cyp_df.columns if c.endswith("_sub")})
+
+    u, v = str(u), str(v)
+
+    # If either drug is missing: return all zeros
+    if u not in cyp_df.index or v not in cyp_df.index:
+        return [0] * (len(enzymes) * 4)
+
     ru, rv = cyp_df.loc[u], cyp_df.loc[v]
     feats = []
     for enz in enzymes:
-        su, iu, du = int(ru.get(f"{enz}_sub",0)), int(ru.get(f"{enz}_inh",0)), int(ru.get(f"{enz}_ind",0))
-        sv, iv, dv = int(rv.get(f"{enz}_sub",0)), int(rv.get(f"{enz}_inh",0)), int(rv.get(f"{enz}_ind",0))
+        su = int(ru.get(f"{enz}_sub", 0)); sv = int(rv.get(f"{enz}_sub", 0))
+        iu = int(ru.get(f"{enz}_inh", 0)); iv = int(rv.get(f"{enz}_inh", 0))
+        du = int(ru.get(f"{enz}_ind", 0)); dv = int(rv.get(f"{enz}_ind", 0))
+
         feats += [
-            int(su and sv),                                 # sub_sub
-            int(iu and iv),                                 # inh_inh
-            int((iu and sv) or (iv and su)),               # inh_sub either
-            int((du and sv) or (dv and su)),               # ind_sub either
+            int(su and sv),  # sub_sub
+            int(iu and iv) if f"{enz}_inh" in cyp_df else 0,
+            int((iu and sv) or (iv and su)) if f"{enz}_inh" in cyp_df else 0,
+            int((du and sv) or (dv and su)) if f"{enz}_ind" in cyp_df else 0,
         ]
     return feats
 

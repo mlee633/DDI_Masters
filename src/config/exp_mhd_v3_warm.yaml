@@ -1,0 +1,34 @@
+experiment:
+  name: mhd_v3
+  seed: 42
+  split_type: cold_drug        
+  test_size: 0.2
+  val_size: 0.1
+  n_neg_per_pos: 1
+
+data:
+  # data_dir: ${DATA_DIR:/home/isaac/Desktop/Dataset}               # Uni
+  # data_dir: ${DATA_DIR:/Users/ilee00/Desktop/Master.v2/Dataset}   # Mac
+  data_dir : ${C:\Users\minwo\Desktop\Dataset}                      # Home
+  chch_file: ChCh-Miner_durgbank-chem-chem.tsv
+  sep_chch: "\t"
+  ddinter_shards_glob: ddinter_downloads_code_*.csv
+  decagon_file: ChChSe-Decagon_polypharmacy.csv
+  drug_cyp_file: src/dataset/drug_cyp.tsv
+
+output:
+  dir: outputs
+
+models:
+  mhd_v3:
+    use: true
+    emb_dim: 256
+    contrastive_tau: 0.2
+    focal_gamma: 2.0
+    lambda_sup: 1.0
+    lambda_cf: 1.0
+    lr: 0.001  
+    epochs: 50
+    temp_scale: true
+    prior_init_from_counts: true
+

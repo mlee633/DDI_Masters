@@ -1,0 +1,36 @@
+experiment:
+  seed: 42
+  split_type: cold_drug   
+  test_size: 0.2
+  val_size: 0.1
+  n_neg_per_pos: 1
+
+data:
+  data_dir : ${C:\Users\minwo\Desktop\Dataset}   
+  chch_file: ChCh-Miner_durgbank-chem-chem.tsv
+  ddinter_shards_glob: "ddinter_downloads_code_*.csv"
+  decagon_file: ChChSe-Decagon_polypharmacy.csv
+  drug_cyp_file: src/dataset/drug_cyp.tsv
+  sep_chch: "\t"
+
+output:
+  dir: outputs
+
+models:
+  mhd_v4:
+    emb_dim: 256
+    attn_dim: 128
+    focal_gamma: 2.0
+    prior_dropout: 0.1
+    lr: 0.0003
+    epochs: 60
+    patience: 5
+    lambda_sup: 1.0
+    lambda_cf: 0.5
+    lambda_gate: 0.2      # <— new
+    gate_temp: 0.5        # <— new
+    prior_scale: 0.3 
+
+pretrained:
+  rotate_ckpt: outputs/cold_B0_MHD2/rotate_model.pt
+  rotate_map:  outputs/cold_B0_MHD2/drug2id.json

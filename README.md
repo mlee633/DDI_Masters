@@ -57,61 +57,30 @@ models:
 ## Run the roots
 python -m src.train_baselines
 
-#B0: PPMI (co-occurrence baseline)
-models:
-  use_logreg: false
-  use_xgboost: false
-  use_ppmi: true
-  use_rule: false
-  use_distmult: false
-  use_rotate: false
+# Baseline
 
-#B1: Rule presence (lookup baseline)
-models:
-  use_logreg: false
-  use_xgboost: false
-  use_ppmi: false
-  use_rule: true
-  use_distmult: false
-  use_rotate: false
+# Warm split
+python -m src.train_baselines --config src/config/exp_baselines_warm.yaml
 
-#B2: Logistic Regression
-models:
-  use_logreg: true
-  use_xgboost: false
-  use_ppmi: false
-  use_rule: false
-  use_distmult: false
-  use_rotate: false
-
-#B3: DistMult
-models:
-  use_logreg: false
-  use_xgboost: false
-  use_ppmi: false
-  use_rule: false
-  use_distmult: true
-  use_rotate: false
-
-#B3: RotatE
-models:
-  use_logreg: false
-  use_xgboost: false
-  use_ppmi: false
-  use_rule: false
-  use_distmult: false
-  use_rotate: true
+# Cold split
+python -m src.train_baselines --config src/config/exp_baselines_cold.yaml
 
 # Made Algorithms MHD:
 
-#MHD V2:
-python run_benchmark.py
+#MHD-v1 (simple ML + priors fusion)
+# Warm
+python -m src.train_mhd_v1 --config src/config/exp_mhd_v1_warm.yaml
+# Cold
+python -m src.train_mhd_v1 --config src/config/exp_mhd_v1_cold.yaml
 
-#MHD V3:
-python -m src.train_mhd_v3 --config src/config/exp_mhd_v3.yaml
+# MHD-v2 (embeddings + priors fusion, no gating)
+python -m src.train_mhd_v2 --config src/config/exp_mhd_v2_warm.yaml
+python -m src.train_mhd_v2 --config src/config/exp_mhd_v2_cold.yaml
 
-#MHD V4:
-python -m src.train_mhd_v4 --config src/config/exp_mhd_v4.yaml
+#MHD-v3 (adds counterfactual regularisation, but unstable in cold)
+python -m src.train_mhd_v3 --config src/config/exp_mhd_v3_warm.yaml
+python -m src.train_mhd_v3 --config src/config/exp_mhd_v3_cold.yaml
 
-# Comparison Table:
-python -m src.scripts.run_ablation_mhd_v4 --config src/config/exp_mhd_v4.yaml
+#MHD-v4 (final gated version)
+python -m src.train_mhd_v4 --config src/config/exp_mhd_v4_warm.yaml
+python -m src.train_mhd_v4 --config src/config/exp_mhd_v4_cold.yaml
