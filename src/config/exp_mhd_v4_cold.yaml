@@ -32,5 +32,5 @@ models:
     prior_scale: 0.3 
 
 pretrained:
-  rotate_ckpt: outputs/cold_B0_MHD2/rotate_model.pt
-  rotate_map:  outputs/cold_B0_MHD2/drug2id.json
+  rotate_ckpt: outputs/cold_B0_MHDv2_Final/rotate_model.pt
+  rotate_map:  outputs/cold_B0_MHDv2_Final/drug2id.json

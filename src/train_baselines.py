@@ -282,6 +282,7 @@ def main():
         return np.concatenate(blocks, axis=1) if blocks else np.zeros((len(df), 0), dtype=np.float32)
 
     mhd2 = MHDv2(device=device)
+    log_file, writer = init_logger(out_dir, "MHD_v2")
 
     atc_tr, cyp_tr = prior_block(tr); atc_va, cyp_va = prior_block(va)
     train_blocks = [g_rot_tr.reshape(-1,1), g_dm_tr.reshape(-1,1),
@@ -290,6 +291,11 @@ def main():
     val_blocks = [g_rot_va.reshape(-1,1), g_dm_va.reshape(-1,1),
                 X_va.values, ppmi_vec(va).reshape(-1,1), rule_vec(va).reshape(-1,1),
                 atc_va, cyp_va, emb_block(va, mhd2)]
+    
+    mhd2.fit(train_blocks, val_blocks,
+             tr["label"].values, va["label"].values,
+             log_writer=writer, log_file=log_file)
+    log_file.close()
 
     # ---- Debug: check feature dimensions ----
     print("RotatE score:", g_rot_tr.reshape(-1,1).shape[1])

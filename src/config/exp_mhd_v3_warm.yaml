@@ -1,7 +1,7 @@
 experiment:
   name: mhd_v3
   seed: 42
-  split_type: cold_drug        
+  split_type: warm
   test_size: 0.2
   val_size: 0.1
   n_neg_per_pos: 1

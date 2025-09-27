@@ -1,0 +1,31 @@
+{
+  "config": {
+    "experiment": {
+      "seed": 42,
+      "split_type": "warm",
+      "test_size": 0.2,
+      "val_size": 0.1,
+      "n_neg_per_pos": 1
+    },
+    "data": {
+      "data_dir": "\\Users\\minwo\\Desktop\\Dataset",
+      "chch_file": "ChCh-Miner_durgbank-chem-chem.tsv",
+      "ddinter_shards_glob": "ddinter_downloads_code_*.csv",
+      "decagon_file": "ChChSe-Decagon_polypharmacy.csv",
+      "drug_cyp_file": "src/dataset/drug_cyp.tsv",
+      "sep_chch": "\t"
+    },
+    "output": {
+      "dir": "outputs"
+    },
+    "models": {
+      "mhd_v1": {
+        "emb_dim": 128,
+        "lr": 0.001,
+        "epochs": 40,
+        "patience": 5,
+        "lambda_sup": 1.0
+      }
+    }
+  }
+}

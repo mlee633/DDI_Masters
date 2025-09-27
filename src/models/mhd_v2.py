@@ -49,7 +49,8 @@ class MHDv2:
     def _stack(self, blocks):
         return np.concatenate(blocks, axis=1).astype(np.float32)
 
-    def fit(self, train_blocks, val_blocks, y_tr, y_va):
+    def fit(self, train_blocks, val_blocks, y_tr, y_va,
+        log_writer=None, log_file=None):
         X_tr = self._stack(train_blocks)
         X_va = self._stack(val_blocks)
 
@@ -58,8 +59,10 @@ class MHDv2:
         bce = nn.BCEWithLogitsLoss()
 
         best = -1.0; best_state = None; patience = 0
-        tr = torch.tensor(X_tr, device=self.device); ytr = torch.tensor(y_tr, dtype=torch.float32, device=self.device)
-        va = torch.tensor(X_va, device=self.device); yva = torch.tensor(y_va, dtype=torch.float32, device=self.device)
+        tr = torch.tensor(X_tr, device=self.device)
+        ytr = torch.tensor(y_tr, dtype=torch.float32, device=self.device)
+        va = torch.tensor(X_va, device=self.device)
+        yva = torch.tensor(y_va, dtype=torch.float32, device=self.device)
 
         for epoch in range(self.max_epochs):
             self.model.train()
@@ -68,31 +71,44 @@ class MHDv2:
             loss = bce(logits, ytr)
             loss.backward(); opt.step()
 
-            # val
+            # validation
             self.model.eval()
             with torch.no_grad():
                 val_logits = self.model(va)
                 val_probs = torch.sigmoid(val_logits).cpu().numpy()
-            auprc = compute_all(y_va, val_probs)["AUPRC"]
+            metrics = compute_all(y_va, val_probs)
+            auprc, auroc = metrics["AUPRC"], metrics["AUROC"]
+
+            # log to CSV
+            if log_writer:
+                log_writer.writerow([epoch+1, float(loss.item()), float(auprc), float(auroc)])
+                log_file.flush()
+
+            print(f"Epoch {epoch+1}/{self.max_epochs} "
+                f"loss={loss.item():.4f} | val AUPRC={auprc:.4f} AUROC={auroc:.4f}")
+
             if auprc > best:
-                best = auprc; best_state = {k: v.detach().cpu().clone() for k,v in self.model.state_dict().items()}
+                best = auprc
+                best_state = {k: v.detach().cpu().clone() for k,v in self.model.state_dict().items()}
                 patience = 0
             else:
                 patience += 1
                 if patience >= self.patience:
+                    print("Early stopping.")
                     break
 
-        # restore best
         if best_state:
             self.model.load_state_dict(best_state)
 
-        # temperature scaling (simple grid)
+        # temperature scaling
         with torch.no_grad():
             v_logits = self.model(va).cpu().numpy()
         best_T, best_nll = 1.0, 1e9
         for T in np.linspace(0.5, 2.0, 16):
+            from sklearn.metrics import log_loss
             nll = log_loss(y_va, 1/(1+np.exp(-v_logits/T)), labels=[0,1])
-            if nll < best_nll: best_T, best_nll = T, nll
+            if nll < best_nll:
+                best_T, best_nll = T, nll
         self.temperature_ = float(best_T)
         return self
 
