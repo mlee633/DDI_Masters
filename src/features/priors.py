@@ -138,19 +138,42 @@ def atc_pair_features(u, v, atc_map):
 
 def load_cyp_table(path_like):
     """
-    Expect a TSV created by build_drug_cyp.py with columns:
-      drug_id, cyp1a2_sub, cyp1a2_inh, cyp1a2_ind, ..., cyp3a4_sub, cyp3a4_inh, cyp3a4_ind
+    Load CYP table. Supports both wide format (binary enzyme columns)
+    and long format (drug_id, enzyme, Label).
     """
-    p = Path(path_like)
-    if not p.exists():
+    import pandas as pd
+    from pathlib import Path
+
+    path = Path(path_like)
+    if not path.exists():
         return None
-    df = pd.read_csv(p, sep="\t")
-    df["drug_id"] = df["drug_id"].astype(str)
-    df = df.set_index("drug_id")
-    # normalise to int 0/1
-    for c in df.columns:
-        df[c] = (df[c].fillna(0).astype(int) > 0).astype(int)
-    return df
+
+    df = pd.read_csv(path, sep="\t")
+
+    # --- Case 1: Already in wide format (has binary enzyme columns) ---
+    if "enzyme" not in df.columns:
+        # Normalise types
+        df["drug_id"] = df["drug_id"].astype(str)
+        df = df.set_index("drug_id")
+        for c in df.columns:
+            df[c] = (df[c].fillna(0).astype(int) > 0).astype(int)
+        return df.reset_index()
+
+    # --- Case 2: Long format -> pivot to wide ---
+    wide = df.pivot_table(
+        index="drug_id",
+        columns="enzyme",
+        values="Label",
+        aggfunc="max",
+        fill_value=0
+    ).reset_index()
+
+    # Normalise types
+    wide["drug_id"] = wide["drug_id"].astype(str)
+    for c in wide.columns[1:]:
+        wide[c] = (wide[c].fillna(0).astype(int) > 0).astype(int)
+
+    return wide
 
 def cyp_pair_features(u, v, cyp_df):
     """
