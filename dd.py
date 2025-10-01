@@ -62,13 +62,13 @@
 
 # # save updated file
 # cyp_filtered.to_csv("src/dataset/drug_cyp_aligned_filtered.tsv", sep="\t", index=False)
-# print("✅ Saved filtered CYP file → src/dataset/drug_cyp_aligned_filtered.tsv")
+# print("Saved filtered CYP file → src/dataset/drug_cyp_aligned_filtered.tsv")
 
 
 from src.features.priors import load_cyp_table
 import pathlib
 
-# Point directly to your CYP file
+# Point directly to CYP file
 cyp_path = pathlib.Path("C:/Users/minwo/Documents/GitHub/DDI_Masters/src/dataset/drug_cyp.tsv")
 cyp_df = load_cyp_table(cyp_path)
 
