@@ -106,11 +106,23 @@ def main():
         run_idx += 1
     ensure_dir(out_dir)
 
-    # Load sources
+    ################################################################################
+    # # Load sources
     chch = load_chch(data_dir / cfg["data"]["chch_file"], sep=cfg["data"]["sep_chch"])
     ddinter = load_ddinter(sorted(list(data_dir.glob(cfg["data"]["ddinter_shards_glob"]))))
     decagon = load_decagon(data_dir / cfg["data"]["decagon_file"])
     pos_all = merge_sources(chch, ddinter, decagon)
+
+    # TESTING PURPOSE
+    # edges_dict = build_graph(cfg)
+    # edges = edges_dict["unified"]
+
+    # # For compatibility with the rest of the pipeline
+    # # rename to pos_all (positive edges)
+    # pos_all = edges.rename(columns={"drug_u": "drug_u", "drug_v": "drug_v"})
+    # print(f"Loaded harmonised dataset: {len(pos_all)} positive edges "
+    #     f"from {list(edges_dict.keys())}")
+    # ################################################################################
 
     # Negatives
     neg_all = negative_sampling(pos_all, ratio=cfg["experiment"]["n_neg_per_pos"], seed=cfg["experiment"]["seed"])
@@ -135,7 +147,8 @@ def main():
     # -------------------
     # B1: Rule
     # -------------------
-    if cfg["models"]["use_rule"]:
+    # if cfg["models"]["use_rule"]:
+    if cfg["models"].get("use_rule", False):
         rule = RulePresenceModel(tr[tr["label"] == 1][["drug_u", "drug_v"]])
         for split, df, y in [("val", va, y_va), ("test", te, y_te)]:
             score = rule.predict_proba(df[["drug_u", "drug_v"]])
@@ -145,7 +158,8 @@ def main():
     # -------------------
     # B0: PPMI
     # -------------------
-    if cfg["models"]["use_ppmi"]:
+    # if cfg["models"]["use_ppmi"]:
+    if cfg["models"].get("use_ppmi", False):
         ppmi = PPMIBaseline(tr[tr["label"] == 1][["drug_u", "drug_v"]])
         for split, df, y in [("val", va, y_va), ("test", te, y_te)]:
             score = ppmi.predict_proba(df[["drug_u", "drug_v"]])
@@ -155,7 +169,8 @@ def main():
     # -------------------
     # B2: Logistic Regression
     # -------------------
-    if cfg["models"]["use_logreg"]:
+    # if cfg["models"]["use_logreg"]:
+    if cfg["models"].get("use_logreg", False):
         lr = MLModels("logreg").fit(X_tr, y_tr)
         for split, X, y in [("val", X_va, y_va), ("test", X_te, y_te)]:
             score = lr.predict_proba(X)
@@ -165,7 +180,8 @@ def main():
     # -------------------
     # B2: XGBoost
     # -------------------
-    if cfg["models"]["use_xgboost"]:
+    # if cfg["models"]["use_xgboost"]:
+    if cfg["models"].get("use_xgboost", False):
         xgb = MLModels("xgboost").fit(X_tr, y_tr)
         for split, X, y in [("val", X_va, y_va), ("test", X_te, y_te)]:
             score = xgb.predict_proba(X)
@@ -339,7 +355,6 @@ def main():
     df_out.to_csv(out_dir / "metrics_summary.csv", index=False)
     save_json({"config": cfg}, out_dir / "run_config.json")
     print("Saved:", out_dir / "metrics_summary.csv")
-
 
 if __name__ == "__main__":
     main()

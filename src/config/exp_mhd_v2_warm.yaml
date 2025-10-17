@@ -6,7 +6,7 @@ experiment:
   n_neg_per_pos: 1
 
 data:
-  data_dir : ${C:\Users\minwo\Desktop\Dataset}   
+  data_dir : "C:/Users/minwo/Desktop/Dataset"
   chch_file: ChCh-Miner_durgbank-chem-chem.tsv
   ddinter_shards_glob: "ddinter_downloads_code_*.csv"
   decagon_file: ChChSe-Decagon_polypharmacy.csv
@@ -17,6 +17,13 @@ output:
   dir: outputs
 
 models:
+  use_rule: false
+  use_ppmi: false
+  use_logreg: false
+  use_xgboost: false
+  use_distmult: false
+  use_rotate: false
+
   mhd_v2:
     emb_dim: 128
     lr: 0.001
